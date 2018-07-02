@@ -1,0 +1,17 @@
+Notizen:
+
+Fragen:
+
+1. Wie wir mussen Accuracy extrahieren
+2. Hard Triplet und All Triplet verhalten sich verschienen beim training (1 steht ab bei Hard Triplet) -> Wird nicht bei mir passieren
+3. Welche Methode ist besser im Sinne von Accuracy per Epoch
+4. Welche Methode ist besser im Sinnde von Zeitaufwand
+5. Welche generellen Nachteile gibt es bei beiden Methoden -> z.B. das die gesamte Distance Matrix berechnet werden muss/sollte
+6. Welche Nachteile haben beide Methoden gegenuber meiner neunen Methode
+
+1. 
+- Ein Anhaltspunkt ist einfach zu messen wieviele Embeddings erfuellen die TripletLoss Bedingung prozentual...
+ist aber nicht genau, das bei Hard Triplet weniger Triplet in betracht gezogen werden.
+- Eine andere Loesung ist manuell KNN zu berechnen....dazu koennen wir einfach die schon erstellte distance Matrix nehmen....ist aber schwer..
+
+2. Anscheinen hat Hard Triplet den Nachteil, dass die Embeddings nicht gleich im raum verteilt sind.
