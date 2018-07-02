@@ -27,8 +27,9 @@ class TripletNet:
         with tf.variable_scope("triplet") as scope:
             self.embeddings = self.network(tf.reshape(self.images,[batchSize,28,28,1]))         
             scope.reuse_variables() 
-        
-        #self.loss = self.TripletLoss(self.y, self.embeddings)        
+                
+        self.prediction = tf.nn.softmax(logits) #new for acc
+                
         self.loss = self.batch_all_triplet_loss(self.y, self.embeddings, margin)
         
     def network(self, input, reuse = tf.AUTO_REUSE) :
