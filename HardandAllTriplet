@@ -7,7 +7,6 @@ import numpy as np
 a= tf.test.gpu_device_name()
 print(a)
 
-
 #Hyper-parameters
 
 batchSize = 128            #128
@@ -28,10 +27,11 @@ class TripletNet:
             self.embeddings = self.network(tf.reshape(self.images,[batchSize,28,28,1]))         
             scope.reuse_variables() 
                 
+        self.acc = self.get_accuracy(self.y, self.embeddings)              
         #self.prediction = tf.nn.softmax(self.embeddings) #new for acc
                 
-        #self.loss = self.batch_all_triplet_loss(self.y, self.embeddings, margin)
-        self.loss = self.batch_hard_triplet_loss(self.y, self.embeddings, margin)
+        self.loss = self.batch_all_triplet_loss(self.y, self.embeddings, margin)
+        #self.loss = self.batch_hard_triplet_loss(self.y, self.embeddings, margin)
         
     def network(self, input, reuse = tf.AUTO_REUSE) :
         
@@ -86,6 +86,8 @@ class TripletNet:
           distances = distances + mask * 1e-16
           distances = tf.sqrt(distances)        
           distances = distances * (1.0 - mask)
+          
+        self.dist = distances
 
         return distances      
 
@@ -161,20 +163,18 @@ class TripletNet:
         mask_anchor_positive = tf.to_float(mask_anchor_positive)
     
         anchor_positive_dist = tf.multiply(mask_anchor_positive, pairwise_dist)
-
     
         hardest_positive_dist = tf.reduce_max(anchor_positive_dist, axis=1, keepdims=True)
         tf.summary.scalar("hardest_positive_dist", tf.reduce_mean(hardest_positive_dist))
     
         mask_anchor_negative = self._get_anchor_negative_triplet_mask(labels)
         mask_anchor_negative = tf.to_float(mask_anchor_negative)
-
     
         max_anchor_negative_dist = tf.reduce_max(pairwise_dist, axis=1, keepdims=True)
         anchor_negative_dist = pairwise_dist + max_anchor_negative_dist * (1.0 - mask_anchor_negative)
     
         hardest_negative_dist = tf.reduce_min(anchor_negative_dist, axis=1, keepdims=True)
-        tf.summary.scalar("hardest_negative_dist", tf.reduce_mean(hardest_negative_dist))
+        tf.summary.scalar("hardest_negative_dist", tf.reduce_mean(hardest_negative_dist))    
     
         triplet_loss = tf.maximum(hardest_positive_dist - hardest_negative_dist + margin, 0.0)
       
@@ -182,6 +182,22 @@ class TripletNet:
 
         return triplet_loss      
       
+    def get_accuracy(self, labels, embeddings):
+    
+        pairwise_dist = self._pairwise_distances(embeddings, squared=False)                        
+        
+        values, indices = tf.nn.top_k(tf.negative(pairwise_dist), k=5, sorted=True) #smallest distances using top k for inverted values
+                
+        firstLabels = tf.map_fn(lambda x: labels[indices[:,0][x]], indices[:,0], dtype=tf.float32)  
+        nearLabels = tf.map_fn(lambda x: labels[indices[:,1][x]], indices[:,0], dtype=tf.float32)
+        same = tf.equal(firstLabels, nearLabels)
+        
+        sum = tf.reduce_sum(tf.cast(same, tf.float32))
+        batch = tf.constant([batchSize])
+        
+        acc = tf.divide(sum,tf.cast(batch, tf.float32),name=None)
+        
+        return acc
       
    
 #Main _________________________________________________________________________________________________________
@@ -203,12 +219,12 @@ for step in range(epochs):
   
     batch_images, batch_y = mnist.train.next_batch(batchSize)
     
-    _, loss_v, emb = sess.run([optimizer, model.loss, model.embeddings], feed_dict={ model.images: batch_images, model.y: batch_y})
+    _, loss_v, emb, acc = sess.run([optimizer, model.loss, model.embeddings, model.acc], feed_dict={ model.images: batch_images, model.y: batch_y})
     lossList.append(loss_v)
     
     if step % displaySteps == 0:
         print ('step %3d:  loss: %.6f' % (step, loss_v))         
-        #print('pred', pred)
+        print('acc', acc)
         
     colors=["red", "blue", "green", "orange", "black", "yellow", "pink", "cyan", "magenta", "white"]
     #if step== epochs-1 :        
