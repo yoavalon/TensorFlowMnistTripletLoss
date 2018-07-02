@@ -120,12 +120,8 @@ class TripletNet:
         mask = self._get_triplet_mask(labels)
         mask = tf.to_float(mask)
         
-        #problem here:
-        #tf.reshape(embeddings[indexes[0],:],[2,1])     
-        #Dimensions must be equal, but are 10 and 128 for 'Mul_3' (op: 'Mul') with input shapes: [?,?,?,10], [128,128,128].
-        
-        #triplet_loss = tf.multiply(mask, triplet_loss)
-        triplet_loss = tf.matmul(mask, triplet_loss)
+        triplet_loss = tf.multiply(mask, triplet_loss)
+        #triplet_loss = tf.matmul(mask, triplet_loss)
         
         triplet_loss = tf.maximum(triplet_loss, 0.0)
         
